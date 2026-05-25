@@ -5,7 +5,9 @@ make other implementations in other languages.
 
 # Notes
 
-I will try to get into English words how exactly everything works around in this project.
+I will try to get into English words how exactly everything works around in this
+project. The reason is to that I can design and write my own version that
+actually works.
 
 The `chunk` structure is basically a dynamic array where each byte is an 
 instruction. The vm is stack based, values are push unto the stack, operations
