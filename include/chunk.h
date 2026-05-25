@@ -6,10 +6,14 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef enum {
-  OP_RETURN,
-  OP_CONSTANT,
-} OpCode;
+typedef uint8_t OpCode;
+#define  OP_RETURN 0
+#define OP_CONSTANT 1
+#define OP_ADD 2
+#define OP_SUBTRACT 3
+#define OP_MULTIPLY 4
+#define OP_DIVIDE 5
+#define OP_NEGATE 6
 
 typedef struct {
   int count;
