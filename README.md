@@ -2,9 +2,6 @@
 
 This will be my work in implementing the Lox programming language in C. I might
 make other implementations in other languages.
-
-# Notes
-
 I will try to get into English words how exactly everything works around in this
 project. The reason is to that I can design and write my own version that
 actually works.
@@ -36,3 +33,12 @@ For the moment all numbers are actually doubles, or in practice they seem to be
 ```c
 typedef double Value;
 ```
+
+## Memory
+
+From what I can see is that the main thing of concern is the lifetime of the
+buffer where the `char *source` is held, that buffer needs to life long enough
+to be used throughout the entirety of the program runtime.
+
+Token lexemes are simply pointers and a length that need to be stored. This is
+why the source needs to outlive the execution of the program.

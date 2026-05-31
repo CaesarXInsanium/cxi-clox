@@ -1,4 +1,5 @@
 #include "vm.h"
+#include "compiler.h"
 #include "debug.h"
 #include "value.h"
 #include <stdio.h>
@@ -75,9 +76,16 @@ static InterpretResult run() {
 #undef BINARY_OP
 }
 
-InterpretResult interpret(Chunk *chunk) {
-  vm.chunk = chunk;
-  // point to first byte of list of instructions
+InterpretResult interpret(const char *source) {
+  Chunk chunk;
+  init_chunk(&chunk);
+  if (!compile(source, &chunk)) {
+    free_chunk(&chunk);
+    return INTERPRET_COMPILE_ERROR;
+  }
+  vm.chunk = &chunk;
   vm.ip = vm.chunk->code;
-  return run();
+  InterpretResult result = run();
+  free_chunk(&chunk);
+  return result;
 }

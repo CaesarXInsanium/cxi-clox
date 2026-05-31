@@ -3,39 +3,68 @@
 #include "vm.h"
 #include <stdio.h>
 #include <stdlib.h>
-// binary operators
+#include <string.h>
+
+static char *read_file(const char *path) {
+  FILE *file = fopen(path, "rb");
+  if (file == NULL) {
+    fprintf(stderr, "Could not open file %s\n", path);
+    exit(74);
+  }
+  // TODO fseek, fopen, fprintf might all fail too
+  fseek(file, 0L, SEEK_END);
+  size_t file_size = ftell(file);
+  rewind(file);
+  char *buffer = (char *)malloc((sizeof(char) * file_size) + 1);
+  if (buffer == NULL) {
+    fprintf(stderr,
+            "Not enough memory to allocate, failure to allocate or "
+            "large file size. Path: %s\n",
+            path);
+  }
+  size_t bytes_read = fread(buffer, sizeof(char), file_size, file);
+  if (bytes_read < file_size) {
+    fprintf(stderr, "Failure to read file entirely. %s", path);
+  }
+  buffer[bytes_read] = '\0';
+  fclose(file);
+  return buffer;
+}
+
+static void repl(void) {
+  // hard limit input size
+  char line[1024];
+  for (;;) {
+    if (fgets(line, sizeof(line), stdin)) {
+      printf("\n");
+    }
+    interpret(line);
+  }
+}
+
+static void run_file(const char *path) {
+  char *source = read_file(path);
+  InterpretResult result = interpret(source);
+  if (result == INTERPRET_COMPILE_ERROR)
+    exit(64);
+  if (result == INTERPRET_RUNTIME_ERROR)
+    exit(65);
+
+  // is the source dynamically allocated?
+  free(source);
+}
 
 int main(int argc, char *argv[]) {
   init_vm();
 
-  // write the instructions
-  Chunk chunk;
-  init_chunk(&chunk);
-  int constant = add_constant(&chunk, 1.2);
-  write_chunk(&chunk, OP_CONSTANT, 123);
-  write_chunk(&chunk, constant, 123);
-
-  constant = add_constant(&chunk, 3.4);
-  write_chunk(&chunk, OP_CONSTANT, 123);
-  write_chunk(&chunk, constant, 123);
-
-  write_chunk(&chunk, OP_ADD, 123);
-
-  constant = add_constant(&chunk, 5.6);
-  write_chunk(&chunk, OP_CONSTANT, 123);
-  write_chunk(&chunk, constant, 123);
-
-  write_chunk(&chunk, OP_DIVIDE, 123);
-  write_chunk(&chunk, OP_NEGATE, 123);
-
-  write_chunk(&chunk, OP_RETURN, 123); // code exit
-
-  // log out code
-  disassemble_chunk(&chunk, "test chunk");
-  // execution
-  interpret(&chunk);
-  // ending everyting
-  free_chunk(&chunk);
+  if (argc == 1) {
+    repl();
+  } else if (argc == 2) {
+    run_file(argv[1]);
+  } else {
+    fprintf(stderr, "Usage: clox [path].\n No arguments for REPL\n");
+    exit(64);
+  }
   free_vm();
   return EXIT_SUCCESS;
 }
