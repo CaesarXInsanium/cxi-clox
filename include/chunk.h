@@ -6,26 +6,34 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef uint8_t OpCode;
-#define  OP_RETURN 0
-#define OP_CONSTANT 1
-#define OP_ADD 2
-#define OP_SUBTRACT 3
-#define OP_MULTIPLY 4
-#define OP_DIVIDE 5
-#define OP_NEGATE 6
+typedef enum {
+  OP_RETURN,
+  OP_CONSTANT,
+  OP_NIL,
+  OP_TRUE,
+  OP_FALSE,
+  OP_EQUAL,
+  OP_GREATER,
+  OP_LESS,
+  OP_ADD,
+  OP_SUBTRACT,
+  OP_MULTIPLY,
+  OP_DIVIDE,
+  OP_NOT,
+  OP_NEGATE,
+} OpCode;
 
 typedef struct {
   int count;
   int capacity;
-  uint8_t* code;
-  int* lines;
+  uint8_t *code;
+  int *lines;
   ValueArray constants;
 } Chunk;
 
-void init_chunk(Chunk* chunk);
-void write_chunk(Chunk* chunk, uint8_t byte, int line);
-int add_constant(Chunk* chunk, Value value);
-void free_chunk(Chunk* chunk);
+void init_chunk(Chunk *chunk);
+void write_chunk(Chunk *chunk, uint8_t byte, int line);
+int add_constant(Chunk *chunk, Value value);
+void free_chunk(Chunk *chunk);
 
 #endif
