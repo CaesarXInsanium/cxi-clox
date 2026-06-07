@@ -6,37 +6,41 @@
 #include <string.h>
 
 typedef struct {
-  const char *start;
-  const char *current;
+  const char* start;
+  const char* current;
   int line;
 } Scanner;
 
 Scanner scanner;
 
-void init_scanner(const char *source) {
+void init_scanner(const char* source)
+{
   scanner.start = source;
   scanner.current = source;
   scanner.line = 1;
 }
 
-static Token make_token(TokenType type) {
+static Token make_token(TokenType type)
+{
   Token token;
   token.type = type;
   token.start = scanner.start;
-  token.lenght = (int)(scanner.current - scanner.start);
+  token.length = (int)(scanner.current - scanner.start);
   token.line = scanner.line;
   return token;
 }
-static Token error_token(const char *message) {
+static Token error_token(const char* message)
+{
   Token token;
   token.type = TOKEN_ERROR;
   token.start = message;
-  token.lenght = (int)strlen(message);
+  token.length = (int)strlen(message);
   token.line = scanner.line;
   return token;
 }
 static bool is_at_end() { return *scanner.current == '\0'; }
-static bool match(char expected) {
+static bool match(char expected)
+{
   if (is_at_end())
     return false;
   if (*scanner.current != expected)
@@ -45,21 +49,25 @@ static bool match(char expected) {
   return true;
 }
 static bool is_digit(char c) { return c >= '0' && c <= '9'; }
-static bool is_alpha(char c) {
+static bool is_alpha(char c)
+{
   return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_';
 }
-static char peek_next(void) {
+static char peek_next(void)
+{
   if (is_at_end())
     return '\0';
   return scanner.current[1];
 }
 static char peek(void) { return *scanner.current; }
-static char advance() {
+static char advance()
+{
   scanner.current++;
   return scanner.current[-1];
 }
 
-static Token string(void) {
+static Token string(void)
+{
   while (peek() != '"' && !is_at_end()) {
     if (peek() == '\n')
       scanner.line++;
@@ -71,7 +79,8 @@ static Token string(void) {
   return make_token(TOKEN_STRING);
 }
 
-static void skip_whitespace(void) {
+static void skip_whitespace(void)
+{
   for (;;) {
     char c = peek();
     switch (c) {
@@ -90,7 +99,8 @@ static void skip_whitespace(void) {
   }
 }
 
-static Token number(void) {
+static Token number(void)
+{
   while (is_digit(peek()))
     advance();
   if (peek() == '.' && is_digit(peek_next())) {
@@ -101,15 +111,16 @@ static Token number(void) {
   return make_token(TOKEN_NUMBER);
 }
 
-static TokenType check_keyword(int start, int length, const char *rest,
-                               TokenType type) {
-  if (scanner.current - scanner.start == start + length &&
-      memcmp(scanner.start + start, rest, length) == 0) {
+static TokenType check_keyword(int start, int length, const char* rest,
+    TokenType type)
+{
+  if (scanner.current - scanner.start == start + length && memcmp(scanner.start + start, rest, length) == 0) {
     return type;
   }
   return TOKEN_IDENTIFIER;
 }
-static TokenType identifier_type(void) {
+static TokenType identifier_type(void)
+{
 
   switch (scanner.start[0]) {
   case 'a':
@@ -159,13 +170,15 @@ static TokenType identifier_type(void) {
   }
   return TOKEN_IDENTIFIER;
 }
-static Token identifier(void) {
+static Token identifier(void)
+{
   while (is_alpha(peek()) || is_digit(peek()))
     advance();
   return make_token(identifier_type());
 }
 
-Token scan_token() {
+Token scan_token()
+{
   skip_whitespace();
   scanner.start = scanner.current;
   if (is_at_end())

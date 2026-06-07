@@ -1,28 +1,30 @@
 #ifndef clox_vm_h
 #define clox_vm_h
 
-#include "value.h"
 #include "chunk.h"
+#include "value.h"
 #include <stdint.h>
- 
+
 #define STACK_MAX 256
 
-typedef struct{
-  Chunk *chunk;
+typedef struct {
+  Chunk* chunk;
   // instruction pointer, program counter is alternative name
-  uint8_t *ip;
+  uint8_t* ip;
   Value stack[STACK_MAX];
-  Value *stack_top;
+  Value* stack_top;
+  Obj* objects;
 } VM;
-typedef enum{
+typedef enum {
   INTERPRET_OK,
   INTERPRET_COMPILE_ERROR,
   INTERPRET_RUNTIME_ERROR,
 } InterpretResult;
+extern VM vm;
 
 void init_vm();
 void free_vm();
-InterpretResult interpret(const char *source);
+InterpretResult interpret(const char* source);
 void push(Value value);
 Value pop();
 
