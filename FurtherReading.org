@@ -1,0 +1,11 @@
+#+TITLE: Stuff to continue one with more reading and understanding
+#+AUTHOR: Caesar X Insanium
+* Chapter 19
+- double hashing
+- flexible array member
+- register window
+- deterministic finite automaton
+- open addressing/closed hashing
+- linear probing
+- hash function: deterministic function that accepts arbitrary data as an input and returns an integer value. collisions are to be expected
+- FNV-1a

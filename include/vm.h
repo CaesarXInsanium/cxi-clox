@@ -2,6 +2,7 @@
 #define clox_vm_h
 
 #include "chunk.h"
+#include "table.h"
 #include "value.h"
 #include <stdint.h>
 
@@ -14,12 +15,15 @@ typedef struct {
   Value stack[STACK_MAX];
   Value* stack_top;
   Obj* objects;
+  Table strings;
 } VM;
+
 typedef enum {
   INTERPRET_OK,
   INTERPRET_COMPILE_ERROR,
   INTERPRET_RUNTIME_ERROR,
 } InterpretResult;
+
 extern VM vm;
 
 void init_vm();

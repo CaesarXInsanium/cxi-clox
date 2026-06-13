@@ -34,6 +34,29 @@ For the moment all numbers are actually doubles, or in practice they seem to be
 typedef double Value;
 ```
 
+An update, we have changed the definition of the Value type to a tagged union.
+Now it can represent a number, a object type for OOP(which will be done later),
+and a string.
+```c
+typedef struct {
+  ValueType type;
+  union {
+    bool boolean;
+    double number;
+    Obj* obj;
+  } as;
+} Value;
+```
+
+There is still a lot of design decisions that I do not like. Like global
+variables VM, and procedures with side effects. From what I can see the compiler
+merely walks down an abstract tree as it passes by the source code, parses it
+bit by bit, chunk by chunk and emits bytes as it goes trough. I do not
+understand why there is no tree being built.
+
+The main parsing is done with an array where each token gets assigned a parse
+rule or not. I still do no understand how precedence is decided.
+
 ## Memory
 
 From what I can see is that the main thing of concern is the lifetime of the
@@ -42,3 +65,13 @@ to be used throughout the entirety of the program runtime.
 
 Token lexemes are simply pointers and a length that need to be stored. This is
 why the source needs to outlive the execution of the program.
+
+I still have not gotten to the code where the Garbage collector is dealt with.
+
+I might to once again look around for other compilers written in C or in other
+languages. A C compiler written in Rust sounds like an adventure.
+
+I might have to check out the REDOX OS project to learn more.
+
+I will also have to start reading the "Writing a C compiler book". And see how
+far the C programming language can actually take me
