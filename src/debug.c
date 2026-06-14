@@ -3,14 +3,16 @@
 #include "value.h"
 #include <stdio.h>
 
-void disassemble_chunk(Chunk *chunk, const char *name) {
+void disassemble_chunk(Chunk* chunk, const char* name)
+{
   printf("== %s ==\n", name);
   for (int offset = 0; offset < chunk->count;) {
     offset = dissasemble_instruction(chunk, offset);
   }
 }
 
-static int constant_instruction(const char *name, Chunk *chunk, int offset) {
+static int constant_instruction(const char* name, Chunk* chunk, int offset)
+{
   uint8_t constant = chunk->code[offset + 1];
   printf("%-16s %4d '", name, constant);
   print_value(chunk->constants.values[constant]);
@@ -18,12 +20,14 @@ static int constant_instruction(const char *name, Chunk *chunk, int offset) {
   return offset + 2;
 }
 
-static int simple_instruction(const char *name, int offset) {
+static int simple_instruction(const char* name, int offset)
+{
   printf("%s\n", name);
   return offset + 1;
 }
 
-int dissasemble_instruction(Chunk *chunk, int offset) {
+int dissasemble_instruction(Chunk* chunk, int offset)
+{
   printf("%04d ", offset);
   if (offset > 0 && chunk->lines[offset] == chunk->lines[offset - 1]) {
     printf("   | ");
@@ -32,6 +36,8 @@ int dissasemble_instruction(Chunk *chunk, int offset) {
   }
   uint8_t instruction = chunk->code[offset];
   switch (instruction) {
+  case OP_PRINT:
+    return simple_instruction("OP_PRINT", offset);
   case OP_RETURN:
     return simple_instruction("OP_RETURN", offset);
   case OP_CONSTANT:
@@ -42,6 +48,12 @@ int dissasemble_instruction(Chunk *chunk, int offset) {
     return simple_instruction("OP_TRUE", offset);
   case OP_FALSE:
     return simple_instruction("OP_FALSE", offset);
+  case OP_GET_GLOBAL:
+    return constant_instruction("OP_GET_GLOBAL", chunk, offset);
+  case OP_DEFINE_GLOBAL:
+    return constant_instruction("OP_DEFINE_GLOBAL", chunk, offset);
+  case OP_SET_GLOBAL:
+    return constant_instruction("OP_SET_GLOBAL", chunk, offset);
   case OP_EQUAL:
     return simple_instruction("OP_EQUAL", offset);
   case OP_GREATER:

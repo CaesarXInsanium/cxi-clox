@@ -21,19 +21,24 @@ typedef enum {
   OP_DIVIDE,
   OP_NOT,
   OP_NEGATE,
+  OP_PRINT,
+  OP_POP,
+  OP_DEFINE_GLOBAL,
+  OP_SET_GLOBAL,
+  OP_GET_GLOBAL,
 } OpCode;
 
 typedef struct {
   int count;
   int capacity;
-  uint8_t *code;
-  int *lines;
+  uint8_t* code;
+  int* lines;
   ValueArray constants;
 } Chunk;
 
-void init_chunk(Chunk *chunk);
-void write_chunk(Chunk *chunk, uint8_t byte, int line);
-int add_constant(Chunk *chunk, Value value);
-void free_chunk(Chunk *chunk);
+void init_chunk(Chunk* chunk);
+void write_chunk(Chunk* chunk, uint8_t byte, int line);
+int add_constant(Chunk* chunk, Value value);
+void free_chunk(Chunk* chunk);
 
 #endif
