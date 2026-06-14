@@ -60,7 +60,7 @@ rule or not. I still do no understand how precedence is decided.
 ## Memory
 
 From what I can see is that the main thing of concern is the lifetime of the
-buffer where the `char *source` is held, that buffer needs to life long enough
+buffer where the `char *source` is held, that buffer needs to live long enough
 to be used throughout the entirety of the program runtime.
 
 Token lexemes are simply pointers and a length that need to be stored. This is
@@ -75,3 +75,28 @@ I might have to check out the REDOX OS project to learn more.
 
 I will also have to start reading the "Writing a C compiler book". And see how
 far the C programming language can actually take me
+
+## Variables
+
+It seems that variables are implemented by having some sort of global hash table
+to hold all the variable names as strings, their hashes and stuff. I can see why
+this is done but, I do not fully understand why. Maybe it is for sake of
+simplicity of implementation.
+
+I don't really understand the real difference between local and global variables
+in terms of the actual implementation of the lox language in this book. They say
+that they do not used seperate hash tables for different scopes but that is
+difficult to believe. There is a sort of a Compiler struct that deals with the
+scoping.
+
+```c
+typedef struct {
+  Local locals[UINT8_COUNT];
+  int local_count;
+  int scope_depth;
+} Compiler;
+```
+
+Yeah, this thing. Maybe there are seperate `Compiler` structs floating around,
+and the state of the whole file switches between them whenever there is other
+scopes to deal with.
