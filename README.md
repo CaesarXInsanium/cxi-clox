@@ -100,3 +100,6 @@ typedef struct {
 Yeah, this thing. Maybe there are seperate `Compiler` structs floating around,
 and the state of the whole file switches between them whenever there is other
 scopes to deal with.
+
+I get scoping now. A number is representing the scope level is tracked. Variable
+declared inside a scope are deleted once the scope exits.
