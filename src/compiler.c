@@ -142,7 +142,11 @@ static int emit_jump(uint8_t instruction)
   emit_byte(0xff);
   return current_chunk()->count - 2;
 }
-static void emit_return() { emit_byte(OP_RETURN); }
+static void emit_return()
+{
+  emit_byte(OP_NIL);
+  emit_byte(OP_RETURN);
+}
 
 static uint8_t make_constant(Value value)
 {
@@ -163,6 +167,7 @@ static ObjFunction* end_compiler()
         function->name != NULL ? function->name->chars : "<script>");
   }
 #endif
+  // end this scope of a function, return bytecode emission back to parent node
   current = current->enclosing;
   return function;
 }
@@ -187,6 +192,8 @@ static void parse_precedence(Precedence precedence);
 static uint8_t identifier_constant(Token* name);
 static int resolve_local(Compiler* compiler, Token* name);
 static void and_(bool can_assign);
+static uint8_t argument_list();
+
 static void binary(bool can_assign)
 {
   UNUSED(can_assign);
@@ -227,6 +234,13 @@ static void binary(bool can_assign)
   default:
     return;
   }
+}
+
+static void call(bool can_assign)
+{
+  UNUSED(can_assign);
+  uint8_t arg_count = argument_list();
+  emit_bytes(OP_CALL, arg_count);
 }
 
 static void literal(bool can_assign)
@@ -350,29 +364,29 @@ static void unary(bool can_assign)
   }
 }
 ParseRule rules[] = {
-  [TOKEN_LEFT_PAREN] = { grouping, NULL, PREC_NONE },
+  [TOKEN_LEFT_PAREN] = { grouping, call, PREC_CALL },
   [TOKEN_RIGHT_PAREN] = { NULL, NULL, PREC_NONE },
   [TOKEN_LEFT_BRACE] = { NULL, NULL, PREC_NONE },
   [TOKEN_RIGHT_BRACE] = { NULL, NULL, PREC_NONE },
   [TOKEN_COMMA] = { NULL, NULL, PREC_NONE },
-  [TOKEN_DOT] = { NULL, NULL, PREC_NONE },
+  [TOKEN_DOT] = { NULL, NULL, PREC_CALL },
   [TOKEN_MINUS] = { unary, binary, PREC_TERM },
   [TOKEN_PLUS] = { NULL, binary, PREC_TERM },
   [TOKEN_SEMICOLON] = { NULL, NULL, PREC_NONE },
   [TOKEN_SLASH] = { NULL, binary, PREC_FACTOR },
   [TOKEN_STAR] = { NULL, binary, PREC_FACTOR },
   [TOKEN_BANG] = { unary, NULL, PREC_NONE },
-  [TOKEN_BANG_EQUAL] = { NULL, binary, PREC_NONE },
+  [TOKEN_BANG_EQUAL] = { NULL, binary, PREC_EQUALITY },
   [TOKEN_EQUAL] = { NULL, NULL, PREC_NONE },
-  [TOKEN_EQUAL_EQUAL] = { NULL, binary, PREC_NONE },
-  [TOKEN_GREATER] = { NULL, binary, PREC_NONE },
-  [TOKEN_GREATER_EQUAL] = { NULL, binary, PREC_NONE },
-  [TOKEN_LESS] = { NULL, binary, PREC_NONE },
-  [TOKEN_LESS_EQUAL] = { NULL, binary, PREC_NONE },
+  [TOKEN_EQUAL_EQUAL] = { NULL, binary, PREC_EQUALITY },
+  [TOKEN_GREATER] = { NULL, binary, PREC_COMPARISON },
+  [TOKEN_GREATER_EQUAL] = { NULL, binary, PREC_COMPARISON },
+  [TOKEN_LESS] = { NULL, binary, PREC_COMPARISON },
+  [TOKEN_LESS_EQUAL] = { NULL, binary, PREC_COMPARISON },
   [TOKEN_IDENTIFIER] = { variable, NULL, PREC_NONE },
   [TOKEN_STRING] = { string, NULL, PREC_NONE },
   [TOKEN_NUMBER] = { number, NULL, PREC_NONE },
-  [TOKEN_AND] = { NULL, and_, PREC_NONE },
+  [TOKEN_AND] = { NULL, and_, PREC_AND },
   [TOKEN_CLASS] = { NULL, NULL, PREC_NONE },
   [TOKEN_ELSE] = { NULL, NULL, PREC_NONE },
   [TOKEN_FALSE] = { literal, NULL, PREC_NONE },
@@ -380,7 +394,7 @@ ParseRule rules[] = {
   [TOKEN_FUN] = { NULL, NULL, PREC_NONE },
   [TOKEN_IF] = { NULL, NULL, PREC_NONE },
   [TOKEN_NIL] = { literal, NULL, PREC_NONE },
-  [TOKEN_OR] = { NULL, or_, PREC_NONE },
+  [TOKEN_OR] = { NULL, or_, PREC_OR },
   [TOKEN_PRINT] = { NULL, NULL, PREC_NONE },
   [TOKEN_RETURN] = { NULL, NULL, PREC_NONE },
   [TOKEN_SUPER] = { NULL, NULL, PREC_NONE },
@@ -484,6 +498,22 @@ static void define_variable(uint8_t global)
     return;
   }
   emit_bytes(OP_DEFINE_GLOBAL, global);
+}
+
+static uint8_t argument_list()
+{
+  uint8_t arg_count = 0;
+  if (!check(TOKEN_RIGHT_PAREN)) {
+    do {
+      expression();
+      if (arg_count == 255) {
+        error("Can't have more than 255 arguments.");
+      }
+      arg_count++;
+    } while (match(TOKEN_COMMA));
+  }
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after arguments in function call.");
+  return arg_count;
 }
 static void and_(bool can_assign)
 {
@@ -640,6 +670,19 @@ static void print_statement()
   consume(TOKEN_SEMICOLON, "Expect ';' after value.");
   emit_byte(OP_PRINT);
 }
+static void return_statement()
+{
+  if (current->type == TYPE_SCRIPT) {
+    error("Can't return from top-level code.");
+  }
+  if (match(TOKEN_SEMICOLON)) {
+    emit_return();
+  } else {
+    expression();
+    consume(TOKEN_SEMICOLON, "Expect ';' after return value.");
+    emit_byte(OP_RETURN);
+  }
+}
 static void while_statement()
 {
   int loop_start = current_chunk()->count;
@@ -663,6 +706,8 @@ static void statement()
     for_statement();
   } else if (match(TOKEN_IF)) {
     if_statement();
+  } else if (match(TOKEN_RETURN)) {
+    return_statement();
   } else if (match(TOKEN_WHILE)) {
     while_statement();
   } else if (match(TOKEN_LEFT_BRACE)) {

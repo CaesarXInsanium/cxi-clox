@@ -26,6 +26,12 @@ ObjFunction* new_function()
   init_chunk(&function->chunk);
   return function;
 }
+ObjNative* new_native(NativeFn function)
+{
+  ObjNative* native = ALLOCATE_OBJ(ObjNative, OBJ_NATIVE);
+  native->function = function;
+  return native;
+}
 static ObjString* allocate_string(char* chars, int length, uint32_t hash)
 {
   ObjString* string = ALLOCATE_OBJ(ObjString, OBJ_STRING);
@@ -85,6 +91,9 @@ void print_object(Value value)
     break;
   case OBJ_STRING:
     printf("%s", AS_CSTRING(value));
+    break;
+  default:
+    puts("Why are we still here, just to suffer.");
     break;
   }
 }
