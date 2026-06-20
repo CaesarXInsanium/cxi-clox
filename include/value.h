@@ -1,8 +1,6 @@
 #ifndef clox_value_h
 #define clox_value_h
-
 #include "common.h"
-#include "value.h"
 typedef struct Obj Obj;
 typedef struct ObjString ObjString;
 typedef enum {
