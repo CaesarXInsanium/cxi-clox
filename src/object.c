@@ -7,56 +7,64 @@
 #include <stdio.h>
 #include <string.h>
 
-#define ALLOCATE_OBJ(type, object_type) \
-  (type*)allocate_object(sizeof(type), object_type)
+#define ALLOCATE_OBJ(type, object_type)                                        \
+  (type *)allocate_object(sizeof(type), object_type)
 
-
-static Obj* allocate_object(size_t size, ObjType type)
-{
-  Obj* object = (Obj*)reallocate(NULL, 0, size);
+static Obj *allocate_object(size_t size, ObjType type) {
+  Obj *object = (Obj *)reallocate(NULL, 0, size);
   object->type = type;
   object->is_marked = false;
   object->next = vm.objects;
   vm.objects = object;
 
 #ifdef DEBUG_LOG_GC
-  printf("%p allocate %zu for %d", (void*)object, size, type);
+  printf("%p allocate %zu for %d", (void *)object, size, type);
 #endif
 
   return object;
 }
 
-ObjClosure* new_closure(ObjFunction* function)
-{
-  ObjUpvalue** upvalues = ALLOCATE(ObjUpvalue*, function->upvalue_count);
+ObjClass *new_class(ObjString *name) {
+  // klass is so that is does not conflict with C++ keywords
+  ObjClass *klass = ALLOCATE_OBJ(ObjClass, OBJ_CLASS);
+  klass->name = name;
+  return klass;
+}
+
+ObjClosure *new_closure(ObjFunction *function) {
+  ObjUpvalue **upvalues = ALLOCATE(ObjUpvalue *, function->upvalue_count);
   for (int i = 0; i < function->upvalue_count; i++) {
     upvalues[i] = NULL;
   }
-  ObjClosure* closure = ALLOCATE_OBJ(ObjClosure, OBJ_CLOSURE);
+  ObjClosure *closure = ALLOCATE_OBJ(ObjClosure, OBJ_CLOSURE);
   closure->function = function;
   closure->upvalues = upvalues;
   closure->upvalue_count = function->upvalue_count;
   return closure;
 }
 
-ObjFunction* new_function(void)
-{
-  ObjFunction* function = ALLOCATE_OBJ(ObjFunction, OBJ_FUNCTION);
+ObjFunction *new_function(void) {
+  ObjFunction *function = ALLOCATE_OBJ(ObjFunction, OBJ_FUNCTION);
   function->arity = 0;
   function->upvalue_count = 0;
   function->name = NULL;
   init_chunk(&function->chunk);
   return function;
 }
-ObjNative* new_native(NativeFn function)
-{
-  ObjNative* native = ALLOCATE_OBJ(ObjNative, OBJ_NATIVE);
+
+ObjInstance *new_instance(ObjClass *klass) {
+  ObjInstance *instance = ALLOCATE_OBJ(ObjInstance, OBJ_INSTANCE);
+  instance->klass = klass;
+  init_table(&instance->fields);
+  return instance;
+}
+ObjNative *new_native(NativeFn function) {
+  ObjNative *native = ALLOCATE_OBJ(ObjNative, OBJ_NATIVE);
   native->function = function;
   return native;
 }
-static ObjString* allocate_string(char* chars, int length, uint32_t hash)
-{
-  ObjString* string = ALLOCATE_OBJ(ObjString, OBJ_STRING);
+static ObjString *allocate_string(char *chars, int length, uint32_t hash) {
+  ObjString *string = ALLOCATE_OBJ(ObjString, OBJ_STRING);
   string->length = length;
   string->chars = chars;
   string->hash = hash;
@@ -68,8 +76,7 @@ static ObjString* allocate_string(char* chars, int length, uint32_t hash)
 }
 
 // learn more about hash algorithm FNV-1a
-static uint32_t hash_string(const char* key, int lenght)
-{
+static uint32_t hash_string(const char *key, int lenght) {
   uint32_t hash = 2166136261u;
   for (int i = 0; i < lenght; i++) {
     hash ^= (uint8_t)key[i];
@@ -78,10 +85,9 @@ static uint32_t hash_string(const char* key, int lenght)
   return hash;
 }
 
-ObjString* take_string(char* chars, int length)
-{
+ObjString *take_string(char *chars, int length) {
   uint32_t hash = hash_string(chars, length);
-  ObjString* interned = table_find_string(&vm.strings, chars, length, hash);
+  ObjString *interned = table_find_string(&vm.strings, chars, length, hash);
   if (interned != NULL) {
     FREE_ARRAY(char, chars, length + 1);
     return interned;
@@ -89,37 +95,36 @@ ObjString* take_string(char* chars, int length)
   return allocate_string(chars, length, hash);
 }
 
-ObjString* copy_string(const char* chars, int length)
-{
+ObjString *copy_string(const char *chars, int length) {
   uint32_t hash = hash_string(chars, length);
-  ObjString* interned = table_find_string(&vm.strings, chars, length, hash);
+  ObjString *interned = table_find_string(&vm.strings, chars, length, hash);
   if (interned != NULL)
     return interned;
-  char* heap_chars = ALLOCATE(char, length + 1);
+  char *heap_chars = ALLOCATE(char, length + 1);
   memcpy(heap_chars, chars, length);
   heap_chars[length] = '\0';
   return allocate_string(heap_chars, length, hash);
 }
 
-ObjUpvalue* new_upvalue(Value* slot)
-{
-  ObjUpvalue* upvalue = ALLOCATE_OBJ(ObjUpvalue, OBJ_UPVALUE);
+ObjUpvalue *new_upvalue(Value *slot) {
+  ObjUpvalue *upvalue = ALLOCATE_OBJ(ObjUpvalue, OBJ_UPVALUE);
   upvalue->location = slot;
   upvalue->closed = NIL_VAL;
   upvalue->next = NULL;
   return upvalue;
 }
-static void print_function(ObjFunction* function)
-{
+static void print_function(ObjFunction *function) {
   if (function->name == NULL) {
     printf("<script>");
     return;
   }
   printf("<fn %s>", function->name->chars);
 }
-void print_object(Value value)
-{
+void print_object(Value value) {
   switch (OBJ_TYPE(value)) {
+  case OBJ_CLASS:
+    printf("%s", AS_CLASS(value)->name->chars);
+    break;
   case OBJ_CLOSURE:
     print_function(AS_CLOSURE(value)->function);
     break;
@@ -132,13 +137,18 @@ void print_object(Value value)
   case OBJ_UPVALUE:
     printf("upvalue");
     break;
+  case OBJ_INSTANCE:
+    printf("%s instance", AS_INSTANCE(value)->klass->name->chars);
+    break;
+  case OBJ_NATIVE:
+    printf("native");
+    break;
   default:
     puts("Why are we still here, just to suffer.");
     break;
   }
 }
 
-bool is_obj_type(Value value, ObjType type)
-{
+bool is_obj_type(Value value, ObjType type) {
   return IS_OBJ(value) && AS_OBJ(value)->type == type;
 }

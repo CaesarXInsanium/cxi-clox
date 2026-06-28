@@ -1,15 +1,15 @@
 #ifndef clox_chunk_h
 #define clox_chunk_h
 
+#include "value.h"
 #include <stddef.h>
 #include <stdint.h>
-#include "value.h"
 
 typedef struct {
   int count;
   int capacity;
-  uint8_t* code;
-  int* lines;
+  uint8_t *code;
+  int *lines;
   ValueArray constants;
 } Chunk;
 
@@ -21,6 +21,8 @@ typedef enum {
   OP_NIL,
   OP_TRUE,
   OP_FALSE,
+  OP_GET_PROPERTY,
+  OP_SET_PROPERTY,
   OP_EQUAL,
   OP_GREATER,
   OP_LESS,
@@ -38,6 +40,7 @@ typedef enum {
   OP_CLOSURE,
   OP_CLOSE_UPVALUE,
   OP_RETURN,
+  OP_CLASS,
   OP_POP,
   OP_DEFINE_GLOBAL,
   OP_SET_GLOBAL,
@@ -48,10 +51,9 @@ typedef enum {
   OP_SET_UPVALUE,
 } OpCode;
 
-
-void init_chunk(Chunk* chunk);
-void write_chunk(Chunk* chunk, uint8_t byte, int line);
-int add_constant(Chunk* chunk, Value value);
-void free_chunk(Chunk* chunk);
+void init_chunk(Chunk *chunk);
+void write_chunk(Chunk *chunk, uint8_t byte, int line);
+int add_constant(Chunk *chunk, Value value);
+void free_chunk(Chunk *chunk);
 
 #endif
