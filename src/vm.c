@@ -1,9 +1,9 @@
+#include "value.h"
+#include "object.h"
+#include "memory.h"
 #include "vm.h"
 #include "compiler.h"
 #include "debug.h"
-#include "memory.h"
-#include "object.h"
-#include "value.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,6 +60,13 @@ void init_vm()
 {
   reset_stack();
   vm.objects = NULL;
+  vm.bytes_allocated = 0;
+  vm.next_gc = 1024 * 1024;
+
+  vm.gray_count = 0;
+  vm.gray_capacity = 0;
+  vm.gray_stack = NULL;
+
   init_table(&vm.strings);
   init_table(&vm.globals);
 
@@ -158,14 +165,16 @@ static bool is_falsey(Value value)
 }
 static void concatenate()
 {
-  ObjString* a = AS_STRING(pop());
-  ObjString* b = AS_STRING(pop());
+  ObjString* a = AS_STRING(peek(0));
+  ObjString* b = AS_STRING(peek(1));
   int length = a->length + b->length;
   char* chars = ALLOCATE(char, length + 1);
   memcpy(chars, a->chars, a->length);
   memcpy(chars + a->length, b->chars, b->length);
   chars[length] = '\0';
   ObjString* result = take_string(chars, length);
+  pop();
+  pop();
   push(OBJ_VAL(result));
 }
 static InterpretResult run()

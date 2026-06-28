@@ -13,6 +13,11 @@ pop them off of the stack.
 The main `interpret` procedure will iterate over the bytes and do the
 instructions that are shown. At the end all of the related memory must be freed.
 
+## Todo
+
+What is left to do is add support for comments. However I doubt that I would
+actually bother with doing that.
+
 ## Instructions
 
 To interpret the instructions, first the vm must be reset. The program

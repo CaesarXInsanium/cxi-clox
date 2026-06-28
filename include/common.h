@@ -9,4 +9,6 @@
 #define DEBUG_PRINT_CODE
 #define UNUSED(X) (void)(X)
 #define UINT8_COUNT (UINT8_MAX + 1)
+#define DEBUG_STRESS_GC
+#define DEBUG_LOG_GC
 #endif

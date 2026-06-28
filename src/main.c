@@ -1,13 +1,10 @@
-#include "chunk.h"
-#include "debug.h"
 #include "vm.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-static char* read_file(const char* path)
-{
-  FILE* file = fopen(path, "rb");
+static char *read_file(const char *path) {
+  FILE *file = fopen(path, "rb");
   if (file == NULL) {
     fprintf(stderr, "Could not open file %s\n", path);
     exit(74);
@@ -16,12 +13,12 @@ static char* read_file(const char* path)
   fseek(file, 0L, SEEK_END);
   size_t file_size = ftell(file);
   rewind(file);
-  char* buffer = (char*)malloc((sizeof(char) * file_size) + 1);
+  char *buffer = (char *)malloc((sizeof(char) * file_size) + 1);
   if (buffer == NULL) {
     fprintf(stderr,
-        "Not enough memory to allocate, failure to allocate or "
-        "large file size. Path: %s\n",
-        path);
+            "Not enough memory to allocate, failure to allocate or "
+            "large file size. Path: %s\n",
+            path);
   }
   size_t bytes_read = fread(buffer, sizeof(char), file_size, file);
   if (bytes_read < file_size) {
@@ -32,8 +29,7 @@ static char* read_file(const char* path)
   return buffer;
 }
 
-static void repl(void)
-{
+static void repl(void) {
   // hard limit input size
   char line[1024];
   for (;;) {
@@ -44,9 +40,8 @@ static void repl(void)
   }
 }
 
-static void run_file(const char* path)
-{
-  char* source = read_file(path);
+static void run_file(const char *path) {
+  char *source = read_file(path);
   InterpretResult result = interpret(source);
   if (result == INTERPRET_COMPILE_ERROR)
     exit(64);
@@ -57,8 +52,7 @@ static void run_file(const char* path)
   free(source);
 }
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char *argv[]) {
   init_vm();
 
   if (argc == 1) {

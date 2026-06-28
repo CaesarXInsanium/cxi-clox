@@ -20,10 +20,17 @@ typedef struct {
   int frame_count;
   Value stack[STACK_MAX];
   Value* stack_top;
-  Obj* objects;
   Table strings;
-  ObjUpvalue* open_upvalues;
   Table globals;
+  ObjUpvalue* open_upvalues;
+
+  size_t bytes_allocated;
+  size_t next_gc;
+  Obj* objects;
+  // garbage collector stuff
+  int gray_count;
+  int gray_capacity;
+  Obj** gray_stack;
 } VM;
 
 typedef enum {
@@ -34,10 +41,10 @@ typedef enum {
 
 extern VM vm;
 
-void init_vm();
-void free_vm();
+void init_vm(void);
+void free_vm(void);
 InterpretResult interpret(const char* source);
 void push(Value value);
-Value pop();
+Value pop(void);
 
 #endif

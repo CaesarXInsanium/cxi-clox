@@ -10,11 +10,19 @@
 #define ALLOCATE_OBJ(type, object_type) \
   (type*)allocate_object(sizeof(type), object_type)
 
+
 static Obj* allocate_object(size_t size, ObjType type)
 {
   Obj* object = (Obj*)reallocate(NULL, 0, size);
   object->type = type;
-  object->next = object;
+  object->is_marked = false;
+  object->next = vm.objects;
+  vm.objects = object;
+
+#ifdef DEBUG_LOG_GC
+  printf("%p allocate %zu for %d", (void*)object, size, type);
+#endif
+
   return object;
 }
 
@@ -31,7 +39,7 @@ ObjClosure* new_closure(ObjFunction* function)
   return closure;
 }
 
-ObjFunction* new_function()
+ObjFunction* new_function(void)
 {
   ObjFunction* function = ALLOCATE_OBJ(ObjFunction, OBJ_FUNCTION);
   function->arity = 0;
@@ -52,7 +60,10 @@ static ObjString* allocate_string(char* chars, int length, uint32_t hash)
   string->length = length;
   string->chars = chars;
   string->hash = hash;
+
+  push(OBJ_VAL(string));
   table_set(&vm.strings, string, NIL_VAL);
+  pop();
   return string;
 }
 
@@ -125,4 +136,9 @@ void print_object(Value value)
     puts("Why are we still here, just to suffer.");
     break;
   }
+}
+
+bool is_obj_type(Value value, ObjType type)
+{
+  return IS_OBJ(value) && AS_OBJ(value)->type == type;
 }

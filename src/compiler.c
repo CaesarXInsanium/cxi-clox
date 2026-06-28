@@ -1,6 +1,7 @@
 #include "compiler.h"
 #include "chunk.h"
 #include "common.h"
+#include "memory.h"
 #include "scanner.h"
 #include "vm.h"
 #include <string.h>
@@ -163,7 +164,7 @@ static uint8_t make_constant(Value value)
   }
   return (uint8_t)constant;
 }
-static ObjFunction* end_compiler()
+static ObjFunction* end_compiler(void)
 {
   emit_return();
   ObjFunction* function = current->function;
@@ -194,15 +195,15 @@ static void end_scope()
     current->local_count--;
   }
 }
-static void expression();
-static void statement();
-static void declaration();
+static void expression(void);
+static void statement(void);
+static void declaration(void);
 static ParseRule* get_rule(TokenType type);
 static void parse_precedence(Precedence precedence);
 static uint8_t identifier_constant(Token* name);
 static int resolve_local(Compiler* compiler, Token* name);
 static void and_(bool can_assign);
-static uint8_t argument_list();
+static uint8_t argument_list(void);
 static int resolve_up_value(Compiler* compiler, Token* name);
 
 static void binary(bool can_assign)
@@ -549,7 +550,7 @@ static void define_variable(uint8_t global)
   emit_bytes(OP_DEFINE_GLOBAL, global);
 }
 
-static uint8_t argument_list()
+static uint8_t argument_list(void)
 {
   uint8_t arg_count = 0;
   if (!check(TOKEN_RIGHT_PAREN)) {
@@ -616,7 +617,7 @@ static void fun_declaration()
   function(TYPE_FUNCTION);
   define_variable(global);
 }
-static void var_declaration()
+static void var_declaration(void)
 {
   uint8_t global = parse_variable("Expect variable name.");
   if (match(TOKEN_EQUAL)) {
@@ -627,13 +628,13 @@ static void var_declaration()
   consume(TOKEN_SEMICOLON, "Expect ';' after the variable declaration.");
   define_variable(global);
 }
-static void expression_statement()
+static void expression_statement(void)
 {
   expression();
   consume(TOKEN_SEMICOLON, "Expect ';' after expression");
   emit_byte(OP_POP);
 }
-static void for_statement()
+static void for_statement(void)
 {
   begin_scope();
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
@@ -670,7 +671,7 @@ static void for_statement()
   }
   end_scope();
 }
-static void if_statement()
+static void if_statement(void)
 {
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
   expression();
@@ -685,7 +686,7 @@ static void if_statement()
     statement();
   patch_jump(else_jump);
 }
-static void synchronize()
+static void synchronize(void)
 {
   parser.panic_mode = false;
   while (parser.current.type != TOKEN_EOF) {
@@ -706,7 +707,7 @@ static void synchronize()
     advance();
   }
 }
-static void declaration()
+static void declaration(void)
 {
   if (match(TOKEN_FUN)) {
     fun_declaration();
@@ -718,13 +719,13 @@ static void declaration()
   if (parser.panic_mode)
     synchronize();
 }
-static void print_statement()
+static void print_statement(void)
 {
   expression();
   consume(TOKEN_SEMICOLON, "Expect ';' after value.");
   emit_byte(OP_PRINT);
 }
-static void return_statement()
+static void return_statement(void)
 {
   if (current->type == TYPE_SCRIPT) {
     error("Can't return from top-level code.");
@@ -737,7 +738,7 @@ static void return_statement()
     emit_byte(OP_RETURN);
   }
 }
-static void while_statement()
+static void while_statement(void)
 {
   int loop_start = current_chunk()->count;
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
@@ -752,7 +753,7 @@ static void while_statement()
   patch_jump(exit_jump);
   emit_byte(OP_POP);
 }
-static void statement()
+static void statement(void)
 {
   if (match(TOKEN_PRINT)) {
     print_statement();
@@ -787,4 +788,13 @@ ObjFunction* compile(const char* source)
   }
   ObjFunction* function = end_compiler();
   return parser.had_error ? NULL : function;
+}
+
+void mark_compiler_roots(void)
+{
+  Compiler* compiler = current;
+  while (compiler != NULL) {
+    mark_object((Obj*)compiler->function);
+    compiler = compiler->enclosing;
+  }
 }

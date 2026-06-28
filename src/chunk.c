@@ -1,4 +1,5 @@
 #include "chunk.h"
+#include "vm.h"
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -34,6 +35,8 @@ void free_chunk(Chunk* chunk)
 
 int add_constant(Chunk* chunk, Value value)
 {
+  push(value);
   write_value_array(&chunk->constants, value);
+  pop();
   return chunk->constants.count - 1;
 }

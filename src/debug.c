@@ -1,7 +1,7 @@
-#include "debug.h"
-#include "chunk.h"
 #include "object.h"
+#include "chunk.h"
 #include "value.h"
+#include "debug.h"
 #include <stdio.h>
 
 void disassemble_chunk(Chunk* chunk, const char* name)
