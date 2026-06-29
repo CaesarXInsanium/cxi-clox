@@ -1,6 +1,19 @@
-class Pair {}
+class Pair {};
 
 var pair = Pair();
 pair.first = 1;
 pair.second = 2;
 print pair.first + pair.second;
+
+fun create(klass) {
+  var obj = newInstance(klass);
+  obj.init();
+  return obj;
+}
+var c = create(Pair);
+
+class Brunch {
+  init(food, drink) {}
+}
+
+Brunch("eggs", "coffee");
