@@ -108,3 +108,34 @@ scopes to deal with.
 
 I get scoping now. A number is representing the scope level is tracked. Variable
 declared inside a scope are deleted once the scope exits.
+
+## Performance
+
+Profilers are very useful in measuring the performance of language, in particular
+where in the language the language implementation/runtime spends most of its
+time in doing.
+
+Another optimization is dead code elimination, so that no time is spent in
+compiling or running code that would never run. Very tricky to use with
+profilers as some benchmark programs will be optimized away to absolutely
+nothing. This field is a science in of itself.
+
+`NaN` boxing is a concept that should studied further to be understood for being
+something very interesting. It uses floats to store that efficiently, in
+particular inside of the valid NAN values that the IEEE 754 standard defines, such
+that useful information is stored inside of otherwise wasted space.
+
+The amount of space available is enough to even store memory addresses, if the
+correct offset is stored. Normal numbers remain floating point values, while
+everything else fits.
+
+## Ending
+
+Unfortunately I really want to hurry up and finish this book so I can do my own
+language design and implementation. Namely my first project will be a Scheme
+bytecode compiler. Macros might be a bit more difficult. Its all symbols anyway
+so it might be fine.
+
+I skipped the NaN boxing section due to the fact that I don't understand the
+architecture of this code nor do I wanna bother. I would rather have my own
+implementation with my own design decisions.
